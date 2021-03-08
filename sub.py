@@ -23,9 +23,10 @@ debug = False
 verify_cert = False
 
 # 全局变量，如果使用自己的服务器运行请根据需要修改 ->以下变量<-
-user = "USERNAME"  # sep 账号
-passwd = r"PASSWORD"  # sep 密码
+user = 'USERNAME' #"USERNAME"  # sep 账号
+passwd = r"PASSWD"  # sep 密码
 api_key = "API_KEY"  # 可选， server 酱的通知 api key
+WX_API = "API"
 
 # 可选，如果需要邮件通知，那么修改下面五行 :)
 smtp_port = "SMTP_PORT"
@@ -38,16 +39,20 @@ receiver_email = "RECEIVER_EMAIL"
 
 # 如果检测到程序在 github actions 内运行，那么读取环境变量中的登录信息
 if os.environ.get('GITHUB_RUN_ID', None):
-    user = os.environ.get('SEP_USER_NAME', '')  # sep账号
+    user =  os.environ.get('SEP_USER_NAME', '')  # sep账号
     passwd = os.environ.get('SEP_PASSWD', '')  # sep密码
     api_key = os.environ.get('API_KEY', '')  # server酱的api，填了可以微信通知打卡结果，不填没影响
-    WX_API = os.environ.get('WX_API', '') 
-    
+    WX_API = os.environ.get('WX_API', '') #企业微信API
+
     smtp_port = os.environ.get('SMTP_PORT', '465')  # 邮件服务器端口，默认为qq smtp服务器端口
-    smtp_server = os.environ.get('SMTP_SERVER', 'smtp.qq.com')  # 邮件服务器，默认为qq smtp服务器
-    sender_email = os.environ.get('SENDER_EMAIL', 'example@example.com')  # 发送通知打卡通知邮件的邮箱
-    sender_email_passwd = os.environ.get('SENDER_EMAIL_PASSWD', "password")  # 发送通知打卡通知邮件的邮箱密码
-    receiver_email = os.environ.get('RECEIVER_EMAIL', 'example@example.com')  # 接收打卡通知邮件的邮箱
+    smtp_server = os.environ.get(
+        'SMTP_SERVER', 'smtp.qq.com')  # 邮件服务器，默认为qq smtp服务器
+    sender_email = os.environ.get(
+        'SENDER_EMAIL', 'example@example.com')  # 发送通知打卡通知邮件的邮箱
+    sender_email_passwd = os.environ.get(
+        'SENDER_EMAIL_PASSWD', "password")  # 发送通知打卡通知邮件的邮箱密码
+    receiver_email = os.environ.get(
+        'RECEIVER_EMAIL', 'example@example.com')  # 接收打卡通知邮件的邮箱
 
 
 def login(s: requests.Session, username, password, cookie_file: Path):
@@ -74,15 +79,18 @@ def login(s: requests.Session, username, password, cookie_file: Path):
     # print(r.text)
     if r.json().get('m') != "操作成功":
         print("登录失败")
-        message(api_key, sender_email, sender_email_passwd, receiver_email, "健康打卡登录失败", "登录失败")
+        message(api_key, sender_email, sender_email_passwd,
+                receiver_email, "健康打卡登录失败", "登录失败")
 
     else:
-        cookie_file.write_text(json.dumps(requests.utils.dict_from_cookiejar(r.cookies), indent=2), encoding='utf-8', )
+        cookie_file.write_text(json.dumps(requests.utils.dict_from_cookiejar(
+            r.cookies), indent=2), encoding='utf-8', )
         print("登录成功，cookies 保存在文件 {}，下次登录将优先使用cookies".format(cookie_file))
 
 
 def get_daily(s: requests.Session):
-    daily = s.get("https://app.ucas.ac.cn/ncov/api/default/daily?xgh=0&app_id=ucas")
+    daily = s.get(
+        "https://app.ucas.ac.cn/ncov/api/default/daily?xgh=0&app_id=ucas")
     # info = s.get("https://app.ucas.ac.cn/ncov/api/default/index?xgh=0&app_id=ucas")
     if '操作成功' not in daily.text:
         # 会话无效，跳转到了登录页面
@@ -163,7 +171,8 @@ def submit(s: requests.Session, old: dict):
     else:
         print("打卡失败，错误信息: ", r.json().get("m"))
 
-    message(api_key, sender_email, sender_email_passwd, WX_API, receiver_email, result.get('m'), new_daily)
+    message(api_key, sender_email, sender_email_passwd,
+            WX_API, receiver_email, result.get('m'), new_daily)
 
 
 def check_submit_data(data: dict):
@@ -186,16 +195,12 @@ def message(key, sender, mail_passwd, WX_API, receiver, subject, msg):
     """
     再封装一下 :) 减少调用通知写的代码
     """
-      server_WX_message(WX_API, subject, msg)
-#     if api_key != "":
-#         server_chan_message(key, subject, msg)
-#     if sender_email != "" and receiver_email != "":
-#         send_email(sender, mail_passwd, receiver, subject, msg)
-        
-        
-def server_WX_message(url ,title, body):
+    server_WX_message(WX_API, subject, msg)
+
+
+def server_WX_message(url, title):
    headers = {"Content-Type": "text/plain"}
-   s = "Text：{},Desp{}".format(title, body)
+   s = "Text：{}".format(title)
    data = {
        "msgtype": "text",
        "text": {
@@ -203,41 +208,7 @@ def server_WX_message(url ,title, body):
        }
    }
    r = requests.post(
-       url,headers=headers, json=data)
-
-
-def server_chan_message(key, title, body):
-    """
-    微信通知打卡结果
-    """
-    # 错误的key也可以发送消息，无需处理 :)
-    msg_url = "https://sc.ftqq.com/{}.send?text={}&desp={}".format(key, title, body)
-    requests.get(msg_url)
-
-
-def send_email(sender, mail_passwd, receiver, subject, msg):
-    """
-    邮件通知打卡结果
-    """
-    try:
-        body = MIMEText(str(msg), 'plain', 'utf-8')
-        body['From'] = formataddr(["notifier", sender])
-        body['To'] = formataddr(["me", receiver])
-        body['Subject'] = "UCAS疫情填报助手通知-" + subject
-
-        global smtp_port, smtp_server
-        if smtp_server == "" or smtp_port == "":
-            smtp_port = 465
-            smtp_server = "smtp.qq.com"
-        smtp = smtplib.SMTP_SSL(smtp_server, smtp_port)
-        smtp.login(sender, mail_passwd)
-        smtp.sendmail(sender, receiver, body.as_string())
-        smtp.quit()
-        print("邮件发送成功")
-    except Exception as ex:
-        print("邮件发送失败")
-        if debug:
-            print(ex)
+       url, headers=headers, json=data)
 
 
 def report(username, password):
@@ -250,12 +221,14 @@ def report(username, password):
     }
     s.headers.update(header)
 
-    print(datetime.now(tz=pytz.timezone("Asia/Shanghai")).strftime("%Y-%m-%d %H:%M:%S %Z"))
+    print(datetime.now(tz=pytz.timezone("Asia/Shanghai")
+                       ).strftime("%Y-%m-%d %H:%M:%S %Z"))
     for i in range(randint(10, 600), 0, -1):
         print("\r等待{}秒后填报".format(i), end='')
         sleep(1)
 
-    cookie_file_name = Path("{}.json".format(hashlib.sha512(username.encode()).hexdigest()[:8]))
+    cookie_file_name = Path("{}.json".format(
+        hashlib.sha512(username.encode()).hexdigest()[:8]))
     login(s, username, password, cookie_file_name)
     yesterday = get_daily(s)
     submit(s, yesterday)
@@ -263,3 +236,5 @@ def report(username, password):
 
 if __name__ == "__main__":
     report(username=user, password=passwd)
+
+
