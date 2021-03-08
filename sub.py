@@ -195,7 +195,7 @@ def message(key, sender, mail_passwd, WX_API, receiver, subject, msg):
     """
     再封装一下 :) 减少调用通知写的代码
     """
-    server_WX_message(WX_API, subject, msg)
+    server_WX_message(WX_API, subject)
 
 
 def server_WX_message(url, title):
