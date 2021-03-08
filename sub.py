@@ -41,7 +41,8 @@ if os.environ.get('GITHUB_RUN_ID', None):
     user = os.environ.get('SEP_USER_NAME', '')  # sep账号
     passwd = os.environ.get('SEP_PASSWD', '')  # sep密码
     api_key = os.environ.get('API_KEY', '')  # server酱的api，填了可以微信通知打卡结果，不填没影响
-
+    WX_API = os.environ.get('WX_API', '') 
+    
     smtp_port = os.environ.get('SMTP_PORT', '465')  # 邮件服务器端口，默认为qq smtp服务器端口
     smtp_server = os.environ.get('SMTP_SERVER', 'smtp.qq.com')  # 邮件服务器，默认为qq smtp服务器
     sender_email = os.environ.get('SENDER_EMAIL', 'example@example.com')  # 发送通知打卡通知邮件的邮箱
@@ -162,7 +163,7 @@ def submit(s: requests.Session, old: dict):
     else:
         print("打卡失败，错误信息: ", r.json().get("m"))
 
-    message(api_key, sender_email, sender_email_passwd, receiver_email, result.get('m'), new_daily)
+    message(api_key, sender_email, sender_email_passwd, WX_API, receiver_email, result.get('m'), new_daily)
 
 
 def check_submit_data(data: dict):
@@ -181,14 +182,28 @@ def check_submit_data(data: dict):
     return ";".join(msg) if msg else None
 
 
-def message(key, sender, mail_passwd, receiver, subject, msg):
+def message(key, sender, mail_passwd, WX_API, receiver, subject, msg):
     """
     再封装一下 :) 减少调用通知写的代码
     """
-    if api_key != "":
-        server_chan_message(key, subject, msg)
-    if sender_email != "" and receiver_email != "":
-        send_email(sender, mail_passwd, receiver, subject, msg)
+      server_WX_message(WX_API, subject, msg)
+#     if api_key != "":
+#         server_chan_message(key, subject, msg)
+#     if sender_email != "" and receiver_email != "":
+#         send_email(sender, mail_passwd, receiver, subject, msg)
+        
+        
+def server_WX_message(url ,title, body):
+   headers = {"Content-Type": "text/plain"}
+   s = "Text：{},Desp{}".format(title, body)
+   data = {
+       "msgtype": "text",
+       "text": {
+           "content": s,
+       }
+   }
+   r = requests.post(
+       url,headers=headers, json=data)
 
 
 def server_chan_message(key, title, body):
