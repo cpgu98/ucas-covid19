@@ -42,7 +42,7 @@ if os.environ.get('GITHUB_RUN_ID', None):
     user = os.environ.get('SEP_USER_NAME', '')  # sep账号
     passwd = os.environ.get('SEP_PASSWD', '')  # sep密码
     api_key = os.environ.get('API_KEY', '')  # server酱的api，填了可以微信通知打卡结果，不填没影响
-    WX_API = os.environ.get('WX_API', '')  # 企业微信API
+    WX_API = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=cd0ed2b5-82ff-4f4e-89e8-fd094368903e' #os.environ.get('WX_API', '')  # 企业微信API
 
     smtp_port = os.environ.get('SMTP_PORT', '465')  # 邮件服务器端口，默认为qq smtp服务器端口
     smtp_server = os.environ.get(
