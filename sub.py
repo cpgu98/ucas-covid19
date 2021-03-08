@@ -23,10 +23,10 @@ debug = False
 verify_cert = False
 
 # 全局变量，如果使用自己的服务器运行请根据需要修改 ->以下变量<-
-user = 'USERNAME' #"USERNAME"  # sep 账号
-passwd = r"PASSWD"  # sep 密码
+user = 'USERNAME@qq.com'  # "USERNAME"  # sep 账号
+passwd = r"USERNAME"  # sep 密码
 api_key = "API_KEY"  # 可选， server 酱的通知 api key
-WX_API = "API"
+WX_API = "USERNAME"
 
 # 可选，如果需要邮件通知，那么修改下面五行 :)
 smtp_port = "SMTP_PORT"
@@ -39,10 +39,10 @@ receiver_email = "RECEIVER_EMAIL"
 
 # 如果检测到程序在 github actions 内运行，那么读取环境变量中的登录信息
 if os.environ.get('GITHUB_RUN_ID', None):
-    user =  os.environ.get('SEP_USER_NAME', '')  # sep账号
+    user = os.environ.get('SEP_USER_NAME', '')  # sep账号
     passwd = os.environ.get('SEP_PASSWD', '')  # sep密码
     api_key = os.environ.get('API_KEY', '')  # server酱的api，填了可以微信通知打卡结果，不填没影响
-    WX_API = os.environ.get('WX_API', '') #企业微信API
+    WX_API = os.environ.get('WX_API', '')  # 企业微信API
 
     smtp_port = os.environ.get('SMTP_PORT', '465')  # 邮件服务器端口，默认为qq smtp服务器端口
     smtp_server = os.environ.get(
@@ -199,17 +199,17 @@ def message(key, sender, mail_passwd, WX_API, receiver, subject, msg):
 
 
 def server_WX_message(url, title):
-   headers = {"Content-Type": "text/plain"}
-   s = "Text：{}".format(title)
-   data = {
-       "msgtype": "text",
-       "text": {
+    headers = {"Content-Type": "text/plain"}
+    s = "Text：{}".format(title)
+    data = {
+        "msgtype": "text",
+        "text": {
            "content": s,
-       }
-   }
-   r = requests.post(
+        }
+    }
+    r = requests.post(
        url, headers=headers, json=data)
-
+    print(s)
 
 def report(username, password):
     s = requests.Session()
@@ -223,7 +223,7 @@ def report(username, password):
 
     print(datetime.now(tz=pytz.timezone("Asia/Shanghai")
                        ).strftime("%Y-%m-%d %H:%M:%S %Z"))
-    for i in range(randint(10, 600), 0, -1):
+    for i in range(randint(10, 60), 0, -1):
         print("\r等待{}秒后填报".format(i), end='')
         sleep(1)
 
@@ -236,5 +236,3 @@ def report(username, password):
 
 if __name__ == "__main__":
     report(username=user, password=passwd)
-
-
